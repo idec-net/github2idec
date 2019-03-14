@@ -1,0 +1,27 @@
+{
+    "data": {
+        "path": "./data"
+    },
+    "idec": {
+        "fetch": {
+            "echoes": [
+                "idec.talks"
+            ],
+            "limit": 25,
+            "offset": -25
+        },
+        "authstring": "",
+        "node_url": "https://dynamic.lessmore.pw/idec/",
+        "hello_message": true,
+        "hello_message_template_path": "../templates/hello_message.tpl",
+        "top_post_id": "hOxZjLmgYv3Qwb32vJIK"
+    },
+    "github": {
+        "repo_owner": "idec-net",
+        "repo": "netmail",
+        "token": "",
+        "watched_event_types": [
+            "IssueCommentEvent"
+        ]
+    }
+}
