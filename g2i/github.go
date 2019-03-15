@@ -2,12 +2,15 @@ package g2i
 
 import (
 	"context"
-	"log"
+	"time"
 
 	"encoding/json"
 	"net/http"
 
+	"io/ioutil"
+
 	"github.com/google/go-github/github"
+	log "github.com/sirupsen/logrus"
 )
 
 type GithubClient struct {
@@ -53,29 +56,43 @@ func (g *GithubClient) EventsURL() (string, error) {
 func (g *GithubClient) GetEvents(eventsURL string) ([]github.Event, error) {
 	var events []github.Event
 
-	client := &http.Client{}
+	log.Info("Get repository events")
+
+	client := &http.Client{Timeout: time.Second * 15}
 	req, err := http.NewRequest("GET", eventsURL, nil)
 	if err != nil {
+		log.Error(err)
 		return events, err
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
+		log.Error(err)
 		return events, err
 	}
 	defer resp.Body.Close()
 
-	err = json.NewDecoder(resp.Body).Decode(&events)
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Error(err)
+		return events, err
+	}
+
+	log.Info("Data: %s", string(data))
+
+	err = json.Unmarshal(data, &events)
 	if err != nil {
 		return events, err
 	}
 
+	log.Info("Events received")
 	return events, nil
 }
 
 func (c *Config) IsEventProcessable(eventType string) bool {
 	for i, _ := range c.Github.WatchedEventTypes {
 		if eventType == c.Github.WatchedEventTypes[i] {
+			log.Info("Processing event")
 			return true
 		}
 	}

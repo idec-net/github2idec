@@ -1,5 +1,9 @@
 package g2i
 
+import (
+	"github.com/boltdb/bolt"
+)
+
 type Config struct {
 	Data   Data   `json:"data"`
 	IDEC   IDEC   `json:"idec"`
@@ -8,6 +12,7 @@ type Config struct {
 
 type Data struct {
 	Path string `json:"path"`
+	db   *bolt.DB
 }
 
 type Fetch struct {

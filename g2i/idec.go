@@ -12,12 +12,14 @@ import (
 
 type IDECClient struct {
 	FetchConfig *idec.FetchConfig
+	authstring  string
 	config      *Config
 }
 
 func NewIDECClient(config *Config) *IDECClient {
 	return &IDECClient{
-		config: config,
+		config:     config,
+		authstring: config.IDEC.Authstring,
 		FetchConfig: &idec.FetchConfig{
 			Limit:  config.IDEC.Fetch.Limit,
 			Offset: config.IDEC.Fetch.Offset,
