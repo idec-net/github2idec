@@ -11,10 +11,12 @@
             "offset": -25
         },
         "authstring": "",
-        "node_url": "https://dynamic.lessmore.pw/idec/",
+        "node_url": "http://localhost:3000/",
         "hello_message": true,
         "hello_message_template_path": "../templates/hello_message.tpl",
-        "top_post_id": "hOxZjLmgYv3Qwb32vJIK"
+        "comment_template_path": "../templates/comment.tpl",
+        "top_post_id": "nCqPx67AxXQHemIY8oQq",
+        "message_subg": "Re: Netmail"
     },
     "github": {
         "repo_owner": "idec-net",

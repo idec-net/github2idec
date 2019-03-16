@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	EVENTS_UPDATER_SLEEP = 60
-	ISSUES_UPDATER_SLEEP = 60
+	EVENTS_UPDATER_SLEEP = 60 * 10
+	ISSUES_UPDATER_SLEEP = 60 * 10
 )
 
 type Client struct {
@@ -41,20 +41,23 @@ func (c *Client) Run() {
 	evetsCH := make(chan github.Event)
 	// Run issues updater
 	go c.issuesUpdater()
-	// Run events updater
-	go c.eventsUpdater(evetsCH)
 	// Run IDEC messager
-	go c.idecEventMessager(evetsCH)
-
-	// Main loop
-	for {
-	}
+	go c.idecEventMessenger(evetsCH)
+	// Run events updater
+	c.eventsUpdater(evetsCH)
 }
 
-func (c *Client) idecEventMessager(ch chan github.Event) {
+func (c *Client) idecEventMessenger(ch chan github.Event) {
+	if !c.config.isHelloSent() {
+		c.IDECClient.PostHello()
+		c.config.storeHello()
+	}
 	for {
 		event := <-ch
-		log.Info(event)
+		err := c.IDECClient.PostComment(event)
+		if err != nil {
+			log.Error(err)
+		}
 	}
 }
 
@@ -65,13 +68,12 @@ func (c *Client) eventsUpdater(ch chan github.Event) {
 		log.Error(err)
 	}
 	for {
+		log.Info("Get repository events")
 		events, err := c.GHClient.GetEvents(eventsURL)
 		if err != nil {
 			log.Error(err)
 			time.Sleep(time.Second * EVENTS_UPDATER_SLEEP)
 		}
-
-		log.Info(events)
 
 		var newEvents []github.Event
 		for i, _ := range events {
@@ -80,9 +82,8 @@ func (c *Client) eventsUpdater(ch chan github.Event) {
 			}
 		}
 
-		log.Info(newEvents)
 		prevEvents, err := c.config.getEvents()
-		for i, _ := range newEvents {
+		for i := len(newEvents) - 1; i >= 0; i-- {
 			if err == nil {
 				if idNotInEvents(newEvents[i].GetID(), prevEvents) {
 					ch <- newEvents[i]
@@ -108,6 +109,7 @@ func idNotInEvents(id string, events []github.Event) bool {
 }
 
 func (c *Client) issuesUpdater() {
+	log.Info("Issues updater is running")
 	for {
 		issues, err := c.GHClient.GetIssues()
 		if err != nil {

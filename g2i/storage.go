@@ -17,12 +17,57 @@ const (
 	ISSUES_BUCKET = "issues_bucket"
 	EVENTS_KEY    = "events"
 	EVENTS_BUCKET = "events_bucket"
+	HELLO_BUCKET  = "hello_bucket"
+	HELLO_KEY     = "hello_sended"
 )
+
+func (c *Config) isHelloSent() bool {
+	err := c.Data.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(HELLO_BUCKET))
+		if bucket == nil {
+			return fmt.Errorf("Bucket not created yet")
+		}
+
+		data := bucket.Get([]byte(HELLO_KEY))
+		if string(data) == "1" {
+			return nil
+		}
+		return fmt.Errorf("Wrong value")
+	})
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func (c *Config) storeHello() error {
+	if err := c.checkDB(); err != nil {
+		return err
+	}
+
+	err := c.Data.db.Update(func(tx *bolt.Tx) error {
+		bucket, err := tx.CreateBucketIfNotExists([]byte(HELLO_BUCKET))
+		if err != nil {
+			return err
+		}
+
+		err = bucket.Put([]byte(HELLO_KEY), []byte("1"))
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return err
+}
 
 func (c *Config) storeEvents(events []github.Event) error {
 	if err := c.checkDB(); err != nil {
 		return err
 	}
+
+	log.Info("Store events in the DB")
 
 	data, err := json.Marshal(events)
 	if err != nil {
@@ -109,6 +154,7 @@ func (c *Config) storeIssues(issues []*github.Issue) error {
 		return err
 	}
 
+	log.Info("Store issues in the DB")
 	data, err := json.Marshal(issues)
 	if err != nil {
 		return err

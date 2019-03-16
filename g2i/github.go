@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/go-github/github"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/oauth2"
 )
 
 type GithubClient struct {
@@ -22,10 +23,16 @@ type GithubClient struct {
 }
 
 func NewGithubClient(config *Config, ctx context.Context) *GithubClient {
+	var ts oauth2.TokenSource
 	if config.Github.Token != "" {
-
+		ts = oauth2.StaticTokenSource(
+			&oauth2.Token{
+				AccessToken: config.Github.Token,
+			},
+		)
 	}
-	client := github.NewClient(nil)
+	tc := oauth2.NewClient(ctx, ts)
+	client := github.NewClient(tc)
 	return &GithubClient{client, config.Github.RepoOwner, config.Github.Repo, config.Github.Token, ctx}
 }
 
@@ -72,27 +79,26 @@ func (g *GithubClient) GetEvents(eventsURL string) ([]github.Event, error) {
 	}
 	defer resp.Body.Close()
 
+	log.Debug("Rate limit is: ", resp.Header.Get("X-RateLimit-Limit"),
+		" Remaining: ", resp.Header.Get("X-RateLimit-Remaining"), " Reset time: ", resp.Header.Get("X-RateLimit-Reset"))
+
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Error(err)
 		return events, err
 	}
 
-	log.Info("Data: %s", string(data))
-
 	err = json.Unmarshal(data, &events)
 	if err != nil {
 		return events, err
 	}
 
-	log.Info("Events received")
 	return events, nil
 }
 
 func (c *Config) IsEventProcessable(eventType string) bool {
 	for i, _ := range c.Github.WatchedEventTypes {
 		if eventType == c.Github.WatchedEventTypes[i] {
-			log.Info("Processing event")
 			return true
 		}
 	}

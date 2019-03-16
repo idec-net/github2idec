@@ -27,7 +27,9 @@ type IDEC struct {
 	NodeURL                  string `json:"node_url"`
 	HelloMessage             bool   `json:"hello_message"`
 	HelloMessageTemplatePath string `json:"hello_message_template_path"`
+	CommentTemplatePath      string `json:"comment_template_path"`
 	TopPostID                string `json:"top_post_id"`
+	MessageSubg              string `json:"message_subg"`
 }
 
 type Github struct {
